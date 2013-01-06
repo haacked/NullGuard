@@ -9,6 +9,13 @@ namespace NullGuard.PostSharp
     [Serializable]
     public class EnsureNonNullAspect : OnMethodBoundaryAspect
     {
+        int[] inputArgumentsToValidate;
+        int[] outputArgumentsToValidate;
+        string[] parameterNames;
+        bool validateReturnValue;
+        string memberName;
+        bool isProperty;
+        
         public EnsureNonNullAspect() : this(ValidationFlags.AllPublic)
         {
         }
@@ -20,86 +27,136 @@ namespace NullGuard.PostSharp
 
         public ValidationFlags ValidationFlags { get; set; }
 
+
+        public override bool CompileTimeValidate(MethodBase method)
+        {
+            // This method executes as build time. It should return 'true' if the aspect is actually needed.
+            // It sets some aspect fields which will be serialized into the assembly, and deserialized at runtime,
+            // so we don't need reflection at runtime.
+
+            MethodInformation methodInformation = MethodInformation.GetMethodInformation(method);
+            ParameterInfo[] parameters = method.GetParameters();
+
+            // Check that the aspect applies on the current method.
+            if (!ValidationFlags.HasFlag(ValidationFlags.NonPublic) && !methodInformation.IsPublic) return false;
+            if (!ValidationFlags.HasFlag(ValidationFlags.Properties) && methodInformation.IsProperty) return false;
+            if (!ValidationFlags.HasFlag(ValidationFlags.Methods) && !methodInformation.IsProperty) return false;
+
+            // Store pieces information needed at runtime.
+            this.parameterNames = parameters.Select(p => p.Name).ToArray();
+            this.memberName = methodInformation.Name;
+            this.isProperty = methodInformation.IsProperty;
+
+            ParameterInfo[] argumentsToValidate = parameters.Where(p => p.MayNotBeNull()).ToArray();
+      
+            // Build the list of input arguments that need to be validated.
+            if (ValidationFlags.HasFlag(ValidationFlags.Arguments))
+            {
+                this.inputArgumentsToValidate = argumentsToValidate.Where(p => !p.IsOut).Select(p => p.Position).ToArray();
+            }
+            else
+            {
+                this.inputArgumentsToValidate = new int[0];
+            }
+
+            // Build the list of output arguments that need to be validated.
+            if (ValidationFlags.HasFlag(ValidationFlags.OutValues))
+            {
+                this.outputArgumentsToValidate = argumentsToValidate.Where(p => p.ParameterType.IsByRef).Select(p => p.Position).ToArray();
+            }
+            else
+            {
+                this.outputArgumentsToValidate = new int[0];
+            }
+
+            // Determine whether the return value should be validated.
+            if (!methodInformation.IsConstructor)
+            {
+                this.validateReturnValue = ValidationFlags.HasFlag(ValidationFlags.ReturnValues) && methodInformation.ReturnParameter.MayNotBeNull();
+            }
+
+            // Finally, determine if the aspect is useful on the aspect.
+            bool validationRequired = this.validateReturnValue || this.inputArgumentsToValidate.Length > 0 || this.outputArgumentsToValidate.Length > 0;
+
+            return validationRequired;
+        }
+
+   
         public override void OnEntry(MethodExecutionArgs args)
         {
-            if (!ValidationFlags.HasFlag(ValidationFlags.Arguments)) return;
+            // Validate input arguments. No reflection is used and no memory is allocated by the aspect itself.
 
-            var method = MethodInformation.GetMethodInformation(args);
-            if (method == null
-                || !method.HasArguments
-                || (!ValidationFlags.HasFlag(ValidationFlags.NonPublic) && !method.IsPublic)
-                || (!ValidationFlags.HasFlag(ValidationFlags.Properties) && method.IsProperty)
-                || (!ValidationFlags.HasFlag(ValidationFlags.Methods) && !method.IsProperty)
-                // TODO: What about events?
-                )
-                return;
-
-            var invalidArgument = (from arg in args.Method.GetParameters()
-                where arg.MayNotBeNull() && args.Arguments[arg.Position] == null
-                select arg).FirstOrDefault();
-
-            if (invalidArgument == null) return;
-
-            if (method.IsProperty)
+            foreach (int argumentPosition in inputArgumentsToValidate)
             {
-                throw new ArgumentNullException(invalidArgument.Name,
-                    String.Format(CultureInfo.InvariantCulture,
-                        "Cannot set the value of property '{0}' to null.",
-                        method.Name));
+                if (args.Arguments[argumentPosition] == null)
+                {
+                    string parameterName = this.parameterNames[argumentPosition];
+
+                    if (this.isProperty)
+                    {
+                        
+                        throw new ArgumentNullException(parameterName,
+                            String.Format(CultureInfo.InvariantCulture,
+                                "Cannot set the value of property '{0}' to null.",
+                                this.memberName));
+                    }
+                    else
+                    {
+                        throw new ArgumentNullException(parameterName);
+                    }
+                }
             }
-            throw new ArgumentNullException(invalidArgument.Name);
+
+     
+
         }
 
         public override void OnExit(MethodExecutionArgs args)
         {
-            var method = MethodInformation.GetMethodInformation(args);
-            if (method == null
-                || (!ValidationFlags.HasFlag(ValidationFlags.NonPublic) && !method.IsPublic)
-                || (!ValidationFlags.HasFlag(ValidationFlags.Properties) && method.IsProperty)
-                || (!ValidationFlags.HasFlag(ValidationFlags.Methods) && !method.IsProperty)
-                // TODO: Deal with events later?
-                )
-                return;
 
-            if (ValidationFlags.HasFlag(ValidationFlags.OutValues))
+            // Validate output arguments. 
+
+            foreach (int argumentPosition in outputArgumentsToValidate)
             {
-                foreach (var arg in args.Method.GetParameters().Where(p => p.IsOut))
+                if (args.Arguments[argumentPosition] == null)
                 {
-                    if (arg.ParameterType.IsValueType) continue;
-                    if (args.Arguments[arg.Position] == null)
-                        throw new InvalidOperationException(String.Format(CultureInfo.InvariantCulture,
-                            "Out parameter '{0}' is null.", arg.Name));
+                    string parameterName = this.parameterNames[argumentPosition];
+
+                      throw new InvalidOperationException(String.Format(CultureInfo.InvariantCulture,
+                            "Out parameter '{0}' is null.", parameterName));
                 }
+                
             }
 
-            if (!ValidationFlags.HasFlag(ValidationFlags.ReturnValues)
-                || method.ReturnType == null
-                || method.ReturnType.IsValueType
-                || method.ReturnParameter.AllowsNull()) return;
+            // Validate the return value.
 
-            if (method.ReturnValue != null) return;
-            if (method.IsProperty)
+            if (this.validateReturnValue && args.ReturnValue == null )
             {
+                if (this.isProperty)
+                {
+                    throw new InvalidOperationException(String.Format(CultureInfo.InvariantCulture,
+                        "Return value of property '{0}' is null.",
+                        this.memberName));
+                }
+
                 throw new InvalidOperationException(String.Format(CultureInfo.InvariantCulture,
-                    "Return value of property '{0}' is null.",
-                    method.Name));
+                    "Return value of method '{0}' is null.", this.memberName));
             }
-            throw new InvalidOperationException(String.Format(CultureInfo.InvariantCulture,
-                "Return value of method '{0}' is null.",
-                method.Name));
+
+      
+           
         }
 
         class MethodInformation
         {
-            MethodInformation(MethodExecutionArgs args, ConstructorInfo constructor) : this(constructor, args)
+            MethodInformation(ConstructorInfo constructor) : this((MethodBase) constructor)
             {
                 IsConstructor = true;
                 Name = constructor.Name;
-                HasArguments = args.Arguments.Any();
-                ReturnValue = args.ReturnValue;
+                
             }
 
-            MethodInformation(MethodExecutionArgs args, MethodInfo method) : this(method, args)
+            MethodInformation(MethodInfo method) : this((MethodBase) method)
             {
                 IsConstructor = false;
                 Name = method.Name;
@@ -110,23 +167,21 @@ namespace NullGuard.PostSharp
                     Name = Name.Substring(4);
                     IsProperty = true;
                 }
-                ReturnType = method.ReturnType;
                 ReturnParameter = method.ReturnParameter;
             }
 
-            MethodInformation(MethodBase method, MethodExecutionArgs args)
+            MethodInformation(MethodBase method)
             {
                 IsPublic = method.IsPublic;
-                HasArguments = args.Arguments.Any();
-                ReturnValue = args.ReturnValue;
+       
             }
 
-            public static MethodInformation GetMethodInformation(MethodExecutionArgs args)
+            public static MethodInformation GetMethodInformation(MethodBase  methodBase)
             {
-                var ctor = args.Method as ConstructorInfo;
-                if (ctor != null) return new MethodInformation(args, ctor);
-                var method = args.Method as MethodInfo;
-                return method == null ? null : new MethodInformation(args, method);
+                var ctor = methodBase as ConstructorInfo;
+                if (ctor != null) return new MethodInformation(ctor);
+                var method = methodBase as MethodInfo;
+                return method == null ? null : new MethodInformation(method);
             }
 
             public string Name { get; private set; }
@@ -137,13 +192,8 @@ namespace NullGuard.PostSharp
 
             public bool IsConstructor { get; private set; }
 
-            public bool HasArguments { get; private set; }
-
-            public Type ReturnType { get; private set; }
-
-            public object ReturnValue { get; private set; }
-
-            public ParameterInfo ReturnParameter { get; private set; }
+            
+             public ParameterInfo ReturnParameter { get; private set; }
         }
     }
 }
