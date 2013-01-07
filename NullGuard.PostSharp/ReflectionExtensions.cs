@@ -17,7 +17,7 @@ namespace NullGuard.PostSharp
 
         public static bool MayNotBeNull(this ParameterInfo arg)
         {
-            return !arg.AllowsNull() && !arg.IsOptional && !arg.ParameterType.IsValueType && !arg.IsOut;
+            return !arg.AllowsNull() && !arg.IsOptional && !arg.ParameterType.IsValueType;
         }
     }
 }
