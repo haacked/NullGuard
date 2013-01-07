@@ -111,7 +111,7 @@ namespace NullGuard.PostSharp
 
         }
 
-        public override void OnExit(MethodExecutionArgs args)
+        public override void OnSuccess(MethodExecutionArgs args)
         {
 
             // Validate output arguments. 

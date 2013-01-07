@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Security;
 using NullGuard.PostSharp;
 using Xunit;
 
@@ -67,6 +68,14 @@ namespace Tests
         }
 
         [Fact]
+        public void RequiresNonNullOutValueNotEnforcedUponException()
+        {
+            var sample = new SampleClass();
+            string value;
+            Assert.Throws<ContextMarshalException>(() => sample.MethodWithOutValueAndException(out value));
+        }
+
+        [Fact]
         public void DoesNotRequireNonNullForNonPublicMethod()
         {
             var sample = new SampleClass();
@@ -79,6 +88,8 @@ namespace Tests
             var sample = new ClassWithPrivateMethod();
             Assert.Throws<ArgumentNullException>(() => sample.PublicWrapperOfPrivateMethod());
         }
+
+
     }
 
     public class RewritingProperties
@@ -175,6 +186,11 @@ namespace Tests
         public void MethodWithOutValue(out string nonNullOutArg)
         {
             nonNullOutArg = null;
+        }
+
+        public void MethodWithOutValueAndException(out string nonNullOutArg)
+        {
+            throw new ContextMarshalException();
         }
 
         public void PublicWrapperOfPrivateMethod()
