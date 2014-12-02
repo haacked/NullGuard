@@ -59,6 +59,7 @@
   <ItemGroup>
     <Compile Include="EnsureNonNullAspectFacts.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SampleBaseClass.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config">

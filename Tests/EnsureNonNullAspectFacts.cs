@@ -138,6 +138,15 @@ namespace Tests
         }
     }
 
+    public class InheritanceTests
+    {
+        [Fact]
+        public void ConstraintOnProtectedConstructorIsApplied()
+        {
+            Assert.Throws<ArgumentNullException>(() => new SampleDerivedClass(null));
+        }
+    }
+
     [EnsureNonNullAspect]
     public class SampleClass
     {
