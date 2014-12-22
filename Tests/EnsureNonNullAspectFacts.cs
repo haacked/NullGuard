@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Security;
+using JetBrains.Annotations;
 using NullGuard.PostSharp;
 using Xunit;
 
@@ -151,24 +152,24 @@ namespace Tests
             nonNullOutArg = null;
         }
 
-        public SampleClass(string nonNullArg, [AllowNull] string nullArg)
+        public SampleClass(string nonNullArg, [CanBeNull] string nullArg)
         {
             Console.WriteLine(nonNullArg + " " + nullArg);
         }
 
-        public void SomeMethod(string nonNullArg, [AllowNull] string nullArg)
+        public void SomeMethod(string nonNullArg, [CanBeNull] string nullArg)
         {
             Console.WriteLine(nonNullArg);
         }
 
         public string NonNullProperty { get; set; }
 
-        [AllowNull]
+        [CanBeNull]
         public string NullProperty { get; set; }
 
-        public string PropertyAllowsNullGetButDoesNotAllowNullSet { [return: AllowNull] get; set; }
+        public string PropertyAllowsNullGetButDoesNotAllowNullSet { [return: CanBeNull] get; set; }
 
-        public string PropertyAllowsNullSetButDoesNotAllowNullGet { get; [param: AllowNull] set; }
+        public string PropertyAllowsNullSetButDoesNotAllowNullGet { get; [param: CanBeNull] set; }
 
         public int? NonNullNullableProperty { get; set; }
 
@@ -177,7 +178,7 @@ namespace Tests
             return returnNull ? null : "";
         }
 
-        [return: AllowNull]
+        [return: CanBeNull]
         public string MethodAllowsNullReturnValue()
         {
             return null;

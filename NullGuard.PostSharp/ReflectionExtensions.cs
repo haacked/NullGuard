@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Reflection;
+using JetBrains.Annotations;
 
 namespace NullGuard.PostSharp
 {
@@ -12,7 +13,7 @@ namespace NullGuard.PostSharp
 
         public static bool AllowsNull(this ICustomAttributeProvider value)
         {
-            return value.IsCustomAttributeDefined<AllowNullAttribute>();
+            return value.IsCustomAttributeDefined<CanBeNullAttribute>();
         }
 
         public static bool MayNotBeNull(this ParameterInfo arg)
