@@ -49,7 +49,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AllowNullAttribute.cs" />
-    <Compile Include="CanBeNullAttribute.cs" />
     <Compile Include="EnsureNonNullAspect.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ReflectionExtensions.cs" />

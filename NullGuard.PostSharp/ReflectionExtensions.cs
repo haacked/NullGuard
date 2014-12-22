@@ -13,7 +13,7 @@ namespace NullGuard.PostSharp
 
         public static bool AllowsNull(this ICustomAttributeProvider value)
         {
-            return value.IsCustomAttributeDefined<CanBeNullAttribute>();
+            return value.IsCustomAttributeDefined<AllowNullAttribute>();
         }
 
         public static bool MayNotBeNull(this ParameterInfo arg)
