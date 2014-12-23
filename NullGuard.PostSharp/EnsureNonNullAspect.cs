@@ -15,8 +15,9 @@ namespace NullGuard.PostSharp
         bool validateReturnValue;
         string memberName;
         bool isProperty;
-        
-        public EnsureNonNullAspect() : this(ValidationFlags.AllPublic)
+
+        public EnsureNonNullAspect()
+            : this(ValidationFlags.AllPublic)
         {
         }
 
@@ -48,7 +49,7 @@ namespace NullGuard.PostSharp
             this.isProperty = methodInformation.IsProperty;
 
             ParameterInfo[] argumentsToValidate = parameters.Where(p => p.MayNotBeNull()).ToArray();
-      
+
             // Build the list of input arguments that need to be validated.
             if (ValidationFlags.HasFlag(ValidationFlags.Arguments))
             {
@@ -81,7 +82,7 @@ namespace NullGuard.PostSharp
             return validationRequired;
         }
 
-   
+
         public override void OnEntry(MethodExecutionArgs args)
         {
             // Validate input arguments. No reflection is used and no memory is allocated by the aspect itself.
@@ -94,7 +95,7 @@ namespace NullGuard.PostSharp
 
                     if (this.isProperty)
                     {
-                        
+
                         throw new ArgumentNullException(parameterName,
                             String.Format(CultureInfo.InvariantCulture,
                                 "Cannot set the value of property '{0}' to null.",
@@ -107,7 +108,7 @@ namespace NullGuard.PostSharp
                 }
             }
 
-     
+
 
         }
 
@@ -122,15 +123,15 @@ namespace NullGuard.PostSharp
                 {
                     string parameterName = this.parameterNames[argumentPosition];
 
-                      throw new InvalidOperationException(String.Format(CultureInfo.InvariantCulture,
-                            "Out parameter '{0}' is null.", parameterName));
+                    throw new InvalidOperationException(String.Format(CultureInfo.InvariantCulture,
+                          "Out parameter '{0}' is null.", parameterName));
                 }
-                
+
             }
 
             // Validate the return value.
 
-            if (this.validateReturnValue && args.ReturnValue == null )
+            if (this.validateReturnValue && args.ReturnValue == null)
             {
                 if (this.isProperty)
                 {
@@ -143,20 +144,22 @@ namespace NullGuard.PostSharp
                     "Return value of method '{0}' is null.", this.memberName));
             }
 
-      
-           
+
+
         }
 
         class MethodInformation
         {
-            MethodInformation(ConstructorInfo constructor) : this((MethodBase) constructor)
+            MethodInformation(ConstructorInfo constructor)
+                : this((MethodBase)constructor)
             {
                 IsConstructor = true;
                 Name = constructor.Name;
-                
+
             }
 
-            MethodInformation(MethodInfo method) : this((MethodBase) method)
+            MethodInformation(MethodInfo method)
+                : this((MethodBase)method)
             {
                 IsConstructor = false;
                 Name = method.Name;
@@ -173,10 +176,10 @@ namespace NullGuard.PostSharp
             MethodInformation(MethodBase method)
             {
                 IsPublic = method.IsPublic;
-       
+
             }
 
-            public static MethodInformation GetMethodInformation(MethodBase  methodBase)
+            public static MethodInformation GetMethodInformation(MethodBase methodBase)
             {
                 var ctor = methodBase as ConstructorInfo;
                 if (ctor != null) return new MethodInformation(ctor);
@@ -192,8 +195,8 @@ namespace NullGuard.PostSharp
 
             public bool IsConstructor { get; private set; }
 
-            
-             public ParameterInfo ReturnParameter { get; private set; }
+
+            public ParameterInfo ReturnParameter { get; private set; }
         }
     }
 }

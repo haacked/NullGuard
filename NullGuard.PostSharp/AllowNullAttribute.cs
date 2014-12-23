@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace JetBrains.Annotations
+namespace NullGuard.PostSharp
 {
     [AttributeUsage(AttributeTargets.Parameter | AttributeTargets.ReturnValue | AttributeTargets.Property)]
     public class AllowNullAttribute : Attribute
