@@ -9,7 +9,7 @@ namespace Tests
         public void RequiresNonNullArgument()
         {
             var sample = new SampleClassForReSharper();
-            var exception = Assert.Throws<ArgumentNullException>(() => sample.SomeMethod(null, ""));
+            var exception = Assert.Throws<ArgumentNullException>(() => sample.SomeMethodForReSharper(null, ""));
             Assert.Equal("nonNullArg", exception.ParamName);
         }
 
@@ -17,7 +17,7 @@ namespace Tests
         public void AllowsNullWhenAttributeApplied()
         {
             var sample = new SampleClassForReSharper();
-            sample.SomeMethod("", null);
+            sample.SomeMethodForReSharper("", null);
         }
 
         [Fact]

@@ -2,6 +2,7 @@
 using System.Globalization;
 using System.Linq;
 using System.Reflection;
+using JetBrains.Annotations;
 using PostSharp.Aspects;
 
 namespace NullGuard.PostSharp
@@ -37,6 +38,7 @@ namespace NullGuard.PostSharp
 
             MethodInformation methodInformation = MethodInformation.GetMethodInformation(method);
             ParameterInfo[] parameters = method.GetParameters();
+
 
             // Check that the aspect applies on the current method.
             if (!ValidationFlags.HasFlag(ValidationFlags.NonPublic) && !methodInformation.IsPublic) return false;

@@ -22,7 +22,7 @@ namespace Tests
             Console.WriteLine(nonNullArg + " " + nullArg);
         }
 
-        public void SomeMethod(string nonNullArg, [CanBeNull] string nullArg)
+        public void SomeMethodForReSharper(string nonNullArg, [CanBeNull]string nullArg)
         {
             Console.WriteLine(nonNullArg);
         }
