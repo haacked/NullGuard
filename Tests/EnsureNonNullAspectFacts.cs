@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Security;
 using NullGuard.PostSharp;
 using Xunit;
 
@@ -98,7 +97,7 @@ namespace Tests
         public void PropertySetterRequiresNonNullArgument()
         {
             var sample = new SampleClass();
-            var exception = Assert.Throws<ArgumentNullException>(() => {sample.NonNullProperty = null;});
+            var exception = Assert.Throws<ArgumentNullException>(() => { sample.NonNullProperty = null; });
             Assert.Equal("value", exception.ParamName);
         }
 
@@ -114,13 +113,13 @@ namespace Tests
         {
             var sample = new SampleClass();
             Assert.Null(sample.PropertyAllowsNullGetButDoesNotAllowNullSet);
-            Assert.Throws<ArgumentNullException>(() => {sample.NonNullProperty = null;});
+            Assert.Throws<ArgumentNullException>(() => { sample.NonNullProperty = null; });
         }
 
         [Fact]
         public void PropertyAllowsNullSetButNotGet()
         {
-            var sample = new SampleClass {PropertyAllowsNullSetButDoesNotAllowNullGet = null};
+            var sample = new SampleClass { PropertyAllowsNullSetButDoesNotAllowNullGet = null };
             Assert.Throws<InvalidOperationException>(() =>
                 Console.Write(sample.PropertyAllowsNullSetButDoesNotAllowNullGet));
         }
@@ -128,13 +127,13 @@ namespace Tests
         [Fact]
         public void PropertySetterRequiresAllowsNullArgumentForNullableType()
         {
-            new SampleClass {NonNullNullableProperty = null};
+            new SampleClass { NonNullNullableProperty = null };
         }
 
         [Fact]
         public void DoesNotRequireNullSetterWhenPropertiesNotSpecifiedByAttribute()
         {
-            new ClassWithPrivateMethod {SomeProperty = null};
+            new ClassWithPrivateMethod { SomeProperty = null };
         }
     }
 
